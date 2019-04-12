@@ -1,7 +1,7 @@
 wordworker
 ==================
 
-A small set of services for related to words.
+Services for words.
 
 Installation
 ------------

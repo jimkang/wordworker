@@ -1,7 +1,7 @@
 {
   "name": "wordworker",
   "version": "1.0.0",
-  "description": "REST adapter for static-web-archive.",
+  "description": "Services for words.",
   "main": "start-wordworker.js",
   "private": true,
   "scripts": {

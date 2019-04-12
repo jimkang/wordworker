@@ -16,7 +16,10 @@ var testCases = [
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
-      syllableGroups: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]]
+      syllablesGroupedByWord: {
+        arpabet: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]],
+        ipa: [['beɪ', 'bi'], ['ʃɑɹk']]
+      }
     }
   },
   {

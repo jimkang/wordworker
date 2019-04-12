@@ -7,6 +7,7 @@ var querystring = require('querystring');
 var createWordSyllableMap = require('word-syllable-map').createWordSyllableMap;
 var splitToWords = require('split-to-words');
 var queue = require('d3-queue').queue;
+var arpabetToIPA = require('./arpabet-to-ipa');
 
 var wordSyllableMap = createWordSyllableMap({
   dbLocation: __dirname + '/db/word-syllable.db'
@@ -67,11 +68,16 @@ function Wordworker({ secrets }, done) {
     words.forEach(queueLookup);
     q.awaitAll(respondWithSyllables);
 
-    function respondWithSyllables(error, syllableGroups) {
+    function respondWithSyllables(error, arpabetSyllableGroups) {
       if (error) {
         next(error);
       } else {
-        res.json(200, { syllableGroups });
+        res.json(200, {
+          syllablesGroupedByWord: {
+            arpabet: arpabetSyllableGroups,
+            ipa: arpabetSyllableGroups.map(convertWordToIPA)
+          }
+        });
         next();
       }
     }
@@ -92,6 +98,20 @@ function Wordworker({ secrets }, done) {
     res.end();
     next();
   }
+}
+
+function convertWordToIPA(arpabetWord) {
+  return arpabetWord.map(convertSyllableToIPA);
+}
+
+// This one returns a single string per syllable instead
+// of an array of phonemes.
+function convertSyllableToIPA(arpabetSyllable) {
+  return arpabetSyllable.map(getIPAForPhoneme).join('');
+}
+
+function getIPAForPhoneme(arpabetPhoneme) {
+  return arpabetToIPA[arpabetPhoneme];
 }
 
 module.exports = Wordworker;

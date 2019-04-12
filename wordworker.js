@@ -1,5 +1,7 @@
 var restify = require('restify');
 var callNextTick = require('call-next-tick');
+var url = require('url');
+var querystring = require('querystring');
 
 function Wordworker({ secrets }, done) {
   var server = restify.createServer({
@@ -42,8 +44,11 @@ function Wordworker({ secrets }, done) {
       return;
     }
 
-    if (!req.params) {
-      res.json(400, { message: 'Missing params.' });
+    var parsed = url.parse(req.url);
+    var queryParams = querystring.parse(parsed.search.slice(1));
+
+    if (queryParams.text) {
+      res.json(400, { message: 'Missing text param in query string.' });
       next();
       return;
     }

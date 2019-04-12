@@ -1,7 +1,16 @@
+/* global __dirname */
+
 var restify = require('restify');
 var callNextTick = require('call-next-tick');
 var url = require('url');
 var querystring = require('querystring');
+var createWordSyllableMap = require('word-syllable-map').createWordSyllableMap;
+var splitToWords = require('split-to-words');
+var queue = require('d3-queue').queue;
+
+var wordSyllableMap = createWordSyllableMap({
+  dbLocation: __dirname + '/db/word-syllable.db'
+});
 
 function Wordworker({ secrets }, done) {
   var server = restify.createServer({
@@ -47,14 +56,29 @@ function Wordworker({ secrets }, done) {
     var parsed = url.parse(req.url);
     var queryParams = querystring.parse(parsed.search.slice(1));
 
-    if (queryParams.text) {
+    if (!queryParams.text) {
       res.json(400, { message: 'Missing text param in query string.' });
       next();
       return;
     }
 
-    res.json(200, { message: 'Got it!' });
-    next();
+    var words = splitToWords(queryParams.text);
+    var q = queue();
+    words.forEach(queueLookup);
+    q.awaitAll(respondWithSyllables);
+
+    function respondWithSyllables(error, syllableGroups) {
+      if (error) {
+        next(error);
+      } else {
+        res.json(200, { syllableGroups });
+        next();
+      }
+    }
+
+    function queueLookup(word) {
+      q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
+    }
   }
 
   function respondHead(req, res, next) {

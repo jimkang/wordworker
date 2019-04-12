@@ -26,11 +26,13 @@
   },
   "dependencies": {
     "call-next-tick": "^1.1.2",
+    "d3-queue": "^3.0.7",
     "idmaker": "^0.1.1",
     "lodash.defaults": "^4.2.0",
     "lodash.pick": "^4.4.0",
     "log-format": "^1.0.0",
     "restify": "^4.3.4",
+    "split-to-words": "^1.0.2",
     "standard-bail": "^2.0.1",
     "static-web-archive": "^4.0.1",
     "word-syllable-map": "^1.0.2"

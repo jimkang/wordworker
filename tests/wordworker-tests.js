@@ -16,7 +16,7 @@ var testCases = [
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
-      syllables: [['BA', 'BY'], 'SHARK']
+      syllableGroups: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]]
     }
   },
   {

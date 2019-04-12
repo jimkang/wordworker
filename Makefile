@@ -53,7 +53,7 @@ test:
 	node tests/wordworker-tests.js
 
 try-local:
-	curl -X GET -H 'Authorization: Key $(SECRET)' -H 'content-type: application/json' http://localhost:5678/note
+	curl -X GET -H 'Authorization: Key $(SECRET)' -H 'content-type: application/json' http://localhost:7568/syllables?text=dinosaur
 
 try-server:
 	curl -X POST -H 'Authorization: Key $(SECRET)' -H 'content-type: application/json' https://smidgeo.com/note-taker/note

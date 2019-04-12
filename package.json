@@ -1,0 +1,37 @@
+{
+  "name": "wordworker",
+  "version": "1.0.0",
+  "description": "REST adapter for static-web-archive.",
+  "main": "start-wordworker.js",
+  "private": true,
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jimkang/wordworker.git"
+  },
+  "keywords": [],
+  "author": "Jim Kang",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jimkang/wordworker/issues"
+  },
+  "homepage": "https://github.com/jimkang/wordworker",
+  "devDependencies": {
+    "assert-no-error": "^1.0.0",
+    "omit": "^1.0.1",
+    "request": "^2.88.0",
+    "tape": "^4.10.1"
+  },
+  "dependencies": {
+    "call-next-tick": "^1.1.2",
+    "idmaker": "^0.1.1",
+    "lodash.defaults": "^4.2.0",
+    "lodash.pick": "^4.4.0",
+    "log-format": "^1.0.0",
+    "restify": "^4.3.4",
+    "standard-bail": "^2.0.1",
+    "static-web-archive": "^4.0.1"
+  }
+}

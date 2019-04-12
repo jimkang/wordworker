@@ -1,13 +1,13 @@
 [Unit]
-Description=note-taker
+Description=wordworker
 After=network.target
 [Service]
-ExecStart=/opt/note-taker/start-note-taker.js
+ExecStart=/opt/wordworker/start-wordworker.js
 Restart=always
 User=bot
 Group=bot
 Environment=PATH=/usr/bin:/usr/local/bin
 Environment=NODE_ENV=production
-WorkingDirectory=/opt/note-taker
+WorkingDirectory=/opt/wordworker
 [Install]
 WantedBy=multi-user.target

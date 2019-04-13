@@ -1,7 +1,6 @@
 /* global __dirname */
 
 var restify = require('restify');
-var callNextTick = require('call-next-tick');
 var url = require('url');
 var querystring = require('querystring');
 var createWordSyllableMap = require('word-syllable-map').createWordSyllableMap;
@@ -16,9 +15,7 @@ var sb = require('standard-bail')();
 var wordSyllableMap = createWordSyllableMap({
   dbLocation: __dirname + '/db/word-syllable.db'
 });
-var wordPhonemeMap = createWordPhonemeMap({
-  dbLocation: __dirname + '/db/word-phoneme.db'
-});
+var wordPhonemeMap;
 
 function Wordworker({ secrets }, done) {
   var server = restify.createServer({
@@ -47,7 +44,21 @@ function Wordworker({ secrets }, done) {
   server.get('/syllables', getSyllables);
   server.head(/.*/, respondHead);
 
-  callNextTick(done, null, server);
+  createWordPhonemeMap(
+    {
+      dbLocation: __dirname + '/db/word-phoneme.db'
+    },
+    saveWordPhonemeMap
+  );
+
+  function saveWordPhonemeMap(error, theMap) {
+    if (error) {
+      done(error);
+    } else {
+      wordPhonemeMap = theMap;
+      done(null, server, shutDownDB);
+    }
+  }
 
   function respondOK(req, res, next) {
     res.json(200, { message: 'OK!' });
@@ -92,20 +103,24 @@ function respondWithSyllables({ words, next, res }) {
   words.forEach(queueLookup);
   q.awaitAll(sb(getWordGuesses), next);
 
-  function getWordGuesses(arpabetSyllableGroups) {
+  function queueLookup(word) {
+    q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
+  }
+
+  function getWordGuesses(arpabetSyllableGroupsForWords) {
     var guessQueue = queue();
-    arpabetSyllableGroups.forEach(queueGuess);
+    arpabetSyllableGroupsForWords.forEach(queueGuesses);
     guessQueue.awaitAll(
-      sb(curry(passSyllables)(res, next, arpabetSyllableGroups), next)
+      sb(curry(passSyllables)(res, next, arpabetSyllableGroupsForWords), next)
     );
+
+    function queueGuesses(arpabetSyllableGroup) {
+      arpabetSyllableGroup.forEach(queueGuess);
+    }
 
     function queueGuess(arpabetSyllable) {
       guessQueue.defer(guess, arpabetSyllable);
     }
-  }
-
-  function queueLookup(word) {
-    q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
   }
 }
 
@@ -148,6 +163,10 @@ function convertSyllableToIPA(arpabetSyllable) {
 
 function getIPAForPhoneme(arpabetPhoneme) {
   return arpabetToIPA[arpabetPhoneme];
+}
+
+function shutDownDB(done) {
+  wordPhonemeMap.close(done);
 }
 
 module.exports = Wordworker;

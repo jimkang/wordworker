@@ -41,6 +41,7 @@ function runTest(testCase) {
 
   function testEndpoint(t) {
     var server;
+    var shutDownDB;
 
     WordWorker(
       {
@@ -49,13 +50,14 @@ function runTest(testCase) {
       startServer
     );
 
-    function startServer(error, theServer) {
+    function startServer(error, theServer, shutDown) {
       assertNoError(t.ok, error, 'Server created.');
       if (error) {
         console.log('Error creating server:', error);
         process.exit();
       }
       server = theServer;
+      shutDownDB = shutDown;
       server.listen(port, runRequest);
     }
 
@@ -86,7 +88,11 @@ function runTest(testCase) {
         console.log('body:', body);
       }
       t.deepEqual(body, testCase.expectedBody, 'Body is correct.');
-      server.close(t.end);
+      server.close(shutDown);
+    }
+
+    function shutDown() {
+      shutDownDB(t.end);
     }
   }
 }

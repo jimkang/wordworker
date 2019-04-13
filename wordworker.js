@@ -5,12 +5,19 @@ var callNextTick = require('call-next-tick');
 var url = require('url');
 var querystring = require('querystring');
 var createWordSyllableMap = require('word-syllable-map').createWordSyllableMap;
+var createWordPhonemeMap = require('word-phoneme-map').createWordPhonemeMap;
 var splitToWords = require('split-to-words');
 var queue = require('d3-queue').queue;
 var arpabetToIPA = require('./arpabet-to-ipa');
+var curry = require('lodash.curry');
+
+var sb = require('standard-bail')();
 
 var wordSyllableMap = createWordSyllableMap({
   dbLocation: __dirname + '/db/word-syllable.db'
+});
+var wordPhonemeMap = createWordPhonemeMap({
+  dbLocation: __dirname + '/db/word-phoneme.db'
 });
 
 function Wordworker({ secrets }, done) {
@@ -64,27 +71,7 @@ function Wordworker({ secrets }, done) {
     }
 
     var words = splitToWords(queryParams.text);
-    var q = queue();
-    words.forEach(queueLookup);
-    q.awaitAll(respondWithSyllables);
-
-    function respondWithSyllables(error, arpabetSyllableGroups) {
-      if (error) {
-        next(error);
-      } else {
-        res.json(200, {
-          syllablesGroupedByWord: {
-            arpabet: arpabetSyllableGroups,
-            ipa: arpabetSyllableGroups.map(convertWordToIPA)
-          }
-        });
-        next();
-      }
-    }
-
-    function queueLookup(word) {
-      q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
-    }
+    respondWithSyllables({ words, next, res });
   }
 
   function respondHead(req, res, next) {
@@ -98,6 +85,55 @@ function Wordworker({ secrets }, done) {
     res.end();
     next();
   }
+}
+
+function respondWithSyllables({ words, next, res }) {
+  var q = queue();
+  words.forEach(queueLookup);
+  q.awaitAll(sb(getWordGuesses), next);
+
+  function getWordGuesses(arpabetSyllableGroups) {
+    var guessQueue = queue();
+    arpabetSyllableGroups.forEach(queueGuess);
+    guessQueue.awaitAll(
+      sb(curry(passSyllables)(res, next, arpabetSyllableGroups), next)
+    );
+
+    function queueGuess(arpabetSyllable) {
+      guessQueue.defer(guess, arpabetSyllable);
+    }
+  }
+
+  function queueLookup(word) {
+    q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
+  }
+}
+
+function guess(arpabetSyllable, done) {
+  wordPhonemeMap.wordsForPhonemeSequence(arpabetSyllable, processGuessLookup);
+
+  function processGuessLookup(error, matches) {
+    if (error) {
+      if (error.type === 'NotFoundError') {
+        done(null, [arpabetSyllable]);
+      } else {
+        done(error);
+      }
+    } else {
+      done(null, matches);
+    }
+  }
+}
+
+function passSyllables(res, next, arpabetSyllableGroups, wordGuesses) {
+  res.json(200, {
+    syllablesGroupedByWord: {
+      arpabet: arpabetSyllableGroups,
+      ipa: arpabetSyllableGroups.map(convertWordToIPA),
+      wordGuesses
+    }
+  });
+  next();
 }
 
 function convertWordToIPA(arpabetWord) {

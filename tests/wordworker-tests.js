@@ -18,7 +18,8 @@ var testCases = [
     expectedBody: {
       syllablesGroupedByWord: {
         arpabet: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]],
-        ipa: [['beɪ', 'bi'], ['ʃɑɹk']]
+        ipa: [['beɪ', 'bi'], ['ʃɑɹk']],
+        wordGuesses: [['bay'], ['be'], ['shark']]
       }
     }
   },

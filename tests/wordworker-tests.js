@@ -19,7 +19,30 @@ var testCases = [
       syllablesGroupedByWord: {
         arpabet: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]],
         ipa: [['beɪ', 'bi'], ['ʃɑɹk']],
-        wordGuesses: [['bay'], ['be'], ['shark']]
+        wordGuesses: [
+          ['BAY', 'BAYE', 'BAYH', 'BEY'],
+          ['B', 'B.', 'BE', 'BEA', 'BEE'],
+          ['SHARK']
+        ]
+      }
+    }
+  },
+  {
+    name: 'Syllable that does not have a word match in the database.',
+    endpoint: 'syllables',
+    queryString: 'text=dinosaur',
+    secret: 'secret',
+    secretToUse: 'secret',
+    expectedStatusCode: 200,
+    expectedBody: {
+      syllablesGroupedByWord: {
+        arpabet: [[['D', 'AY'], ['N', 'AH'], ['S', 'AO', 'R']]],
+        ipa: [['daɪ', 'nʌ', 'sɔɹ']],
+        wordGuesses: [
+          ['DAI', 'DI', 'DIE', 'DYE'],
+          ['nuh'],
+          ['SAUR', 'SOAR', 'SOR', 'SORE']
+        ]
       }
     }
   },

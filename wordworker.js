@@ -8,6 +8,7 @@ var createWordPhonemeMap = require('word-phoneme-map').createWordPhonemeMap;
 var splitToWords = require('split-to-words');
 var queue = require('d3-queue').queue;
 var arpabetToIPA = require('./arpabet-to-ipa');
+var arpabetGuessText = require('./arpabet-guess-text');
 var curry = require('lodash.curry');
 
 var sb = require('standard-bail')();
@@ -130,10 +131,12 @@ function guess(arpabetSyllable, done) {
   function processGuessLookup(error, matches) {
     if (error) {
       if (error.type === 'NotFoundError') {
-        done(null, [arpabetSyllable]);
+        done(null, [arpabetGuessText[arpabetSyllable]]);
       } else {
         done(error);
       }
+    } else if (matches.length < 1) {
+      done(null, [arpabetSyllable.map(getTextGuessForArpabetPhoneme).join('')]);
     } else {
       done(null, matches);
     }
@@ -163,6 +166,10 @@ function convertSyllableToIPA(arpabetSyllable) {
 
 function getIPAForPhoneme(arpabetPhoneme) {
   return arpabetToIPA[arpabetPhoneme];
+}
+
+function getTextGuessForArpabetPhoneme(arpabetPhoneme) {
+  return arpabetGuessText[arpabetPhoneme];
 }
 
 function shutDownDB(done) {

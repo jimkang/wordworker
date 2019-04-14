@@ -102,7 +102,7 @@ function Wordworker({ secrets }, done) {
 function respondWithSyllables({ words, next, res }) {
   var q = queue();
   words.forEach(queueLookup);
-  q.awaitAll(sb(getWordGuesses), next);
+  q.awaitAll(sb(getWordGuesses, next));
 
   function queueLookup(word) {
     q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());

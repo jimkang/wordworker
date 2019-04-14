@@ -8,6 +8,7 @@ const port = 7568;
 const serverHost = process.env.SERVER || 'localhost';
 
 var testCases = [
+/*
   {
     name: 'baby shark',
     endpoint: 'syllables',
@@ -46,6 +47,27 @@ var testCases = [
       }
     }
   },
+*/
+  {
+    name: 'Gibberish',
+    endpoint: 'syllables',
+    queryString: 'text=q9834hraj;skdflhsdafa2',
+    secret: 'secret',
+    secretToUse: 'secret',
+    expectedStatusCode: 200,
+    expectedBody: {
+      syllablesGroupedByWord: {
+        arpabet: [[['D', 'AY'], ['N', 'AH'], ['S', 'AO', 'R']]],
+        ipa: [['daɪ', 'nʌ', 'sɔɹ']],
+        wordGuesses: [
+          ['DAI', 'DI', 'DIE', 'DYE'],
+          ['nuh'],
+          ['SAUR', 'SOAR', 'SOR', 'SORE']
+        ]
+      }
+    }
+  },
+
   {
     name: 'Bad secret auth',
     endpoint: 'syllables',

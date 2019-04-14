@@ -102,7 +102,7 @@ function Wordworker({ secrets }, done) {
 function respondWithSyllables({ words, next, res }) {
   var q = queue();
   words.forEach(queueLookup);
-  q.awaitAll(sb(getWordGuesses, next));
+  q.awaitAll(curry(processSyllableLookupResult)(getWordGuesses, next, res));
 
   function queueLookup(word) {
     q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
@@ -170,6 +170,19 @@ function getIPAForPhoneme(arpabetPhoneme) {
 
 function getTextGuessForArpabetPhoneme(arpabetPhoneme) {
   return arpabetGuessText[arpabetPhoneme];
+}
+
+function processSyllableLookupResult(useResults, next, res, error, results) {
+  if (error) {
+    if (error.message.indexOf('Key not found in database') === 0) {
+      res.json(404, { message: 'Word not found' });
+      next();
+    } else {
+      next(error);
+    }
+  } else {
+    useResults(results);
+  }
 }
 
 function shutDownDB(done) {

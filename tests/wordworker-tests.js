@@ -16,7 +16,6 @@ var testCases = [
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
-      isAWildGuess: false,
       syllablesGroupedByWord: {
         arpabet: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]],
         ipa: [['beɪ', 'bi'], ['ʃɑɹk']],
@@ -37,7 +36,6 @@ var testCases = [
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
-      isAWildGuess: false,
       syllablesGroupedByWord: {
         arpabet: [[['D', 'AY'], ['N', 'AH'], ['S', 'AO', 'R']]],
         ipa: [['daɪ', 'nʌ', 'sɔɹ']],
@@ -53,16 +51,32 @@ var testCases = [
   {
     name: 'Gibberish',
     endpoint: 'syllables',
-    queryString: 'text=q9834hraj;skdflhsdafa2',
+    queryString: 'text=legitimate q9834hraj;skdflhsdafa2 word',
     secret: 'secret',
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
-      isAWildGuess: true,
+      containsAWildGuess: true,
       syllablesGroupedByWord: {
-        arpabet: [['Q9834HRA', 'J'], ['SKDFLHSDA', 'FA', '2']],
-        ipa: [['', ''], ['', '', '']],
-        wordGuesses: ['Q9834HRA', 'J', 'SKDFLHSDA', 'FA', '2']
+        arpabet: [
+          [['L', 'AH'], ['JH', 'IH'], ['T', 'AH'], ['M', 'AH', 'T']],
+          [['Q9834HRA'], ['J']],
+          [['SKDFLHSDA'], ['FA'], ['2']],
+          [['W', 'ER', 'D']]
+        ],
+        wordGuesses: [
+          ['LE'],
+          ['jih'],
+          ['TO'],
+          ['MUTT'],
+          ['Q9834HRA'],
+          ['J'],
+          ['SKDFLHSDA'],
+          ['FA'],
+          ['2'],
+          ['WORD']
+        ],
+        ipa: [['lʌ', 'dʒɪ', 'tʌ', 'mʌt'], [], [], ['wɝd']]
       }
     }
   },

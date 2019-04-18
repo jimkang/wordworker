@@ -112,21 +112,35 @@ function respondWithSyllables({ words, next, res }) {
 
   function getWordGuesses(arpabetSyllableGroupsForWords) {
     var guessQueue = queue();
+    var containsAWildGuess;
     arpabetSyllableGroupsForWords.forEach(queueGuesses);
     guessQueue.awaitAll(
-      sb(curry(passSyllables)(res, next, arpabetSyllableGroupsForWords), next)
+      sb(
+        curry(passSyllables)(
+          res,
+          next,
+          containsAWildGuess,
+          arpabetSyllableGroupsForWords
+        ),
+        next
+      )
     );
 
     function queueGuesses(arpabetSyllableGroup) {
-      arpabetSyllableGroup.forEach(queueGuess);
+      if (arpabetSyllableGroup.isAWildGuess) {
+        containsAWildGuess = true;
+        arpabetSyllableGroup.syllables.forEach(queuePassThrough);
+      } else {
+        arpabetSyllableGroup.forEach(queueGuess);
+      }
     }
 
     function queueGuess(arpabetSyllable) {
-      if (arpabetSyllable.isAWordGuess) {
-        guessQueue.defer(curry(passToDone)(arpabetSyllable.wordGuess));
-      } else {
-        guessQueue.defer(guess, arpabetSyllable);
-      }
+      guessQueue.defer(guess, arpabetSyllable);
+    }
+
+    function queuePassThrough(wildGuessObject) {
+      guessQueue.defer(passIt, wildGuessObject);
     }
   }
 }
@@ -149,22 +163,36 @@ function guess(arpabetSyllable, done) {
   }
 }
 
-function passSyllables(res, next, arpabetSyllableGroups, wordGuesses) {
-  var isAWildGuess = arpabetSyllableGroups.some(groupContainsAGuess);
-  var arpabet = arpabetSyllableGroups.map(stripGuessTagsFromGroupOfSyllables);
-  res.json(200, {
-    isAWildGuess,
+function passSyllables(
+  res,
+  next,
+  containsAWildGuess,
+  arpabetSyllableGroups,
+  wordGuesses
+) {
+  var body = {
+    containsAWildGuess,
     syllablesGroupedByWord: {
-      arpabet,
-      ipa: arpabetSyllableGroups.map(convertWordToIPA),
-      wordGuesses
+      arpabet: arpabetSyllableGroups.map(cleanUpWordGuess),
+      wordGuesses: wordGuesses.map(cleanUpWordGuess)
     }
-  });
+  };
+
+  if (arpabetSyllableGroups) {
+    body.syllablesGroupedByWord.ipa = arpabetSyllableGroups.map(
+      convertWordToIPA
+    );
+  }
+  res.json(200, body);
   next();
 }
 
 function convertWordToIPA(arpabetWord) {
-  return arpabetWord.map(convertSyllableToIPA);
+  if (Array.isArray(arpabetWord)) {
+    return arpabetWord.map(convertSyllableToIPA);
+  } else {
+    return [];
+  }
 }
 
 // This one returns a single string per syllable instead
@@ -183,20 +211,6 @@ function getIPAForPhoneme(arpabetPhoneme) {
 
 function getTextGuessForArpabetPhoneme(arpabetPhoneme) {
   return arpabetGuessText[arpabetPhoneme];
-}
-
-function stripGuessTagsFromGroupOfSyllables(possibleGuessObjects) {
-  return possibleGuessObjects.map(stripGuessTags);
-}
-
-function stripGuessTags(possibleGuessObject) {
-  if (
-    typeof possibleGuessObject === 'object' &&
-    possibleGuessObject.isAWordGuess
-  ) {
-    return possibleGuessObject.wordGuess;
-  }
-  return possibleGuessObject;
 }
 
 function getSyllablesForWordWithFallback(word, done) {
@@ -229,16 +243,16 @@ function shutDownDB(done) {
   wordPhonemeMap.close(done);
 }
 
-function passToDone(x, done) {
+function passIt(x, done) {
   callNextTick(done, null, x);
 }
 
-function groupContainsAGuess(group) {
-  return group.some(syllableIsAGuess);
-}
-
-function syllableIsAGuess(syllable) {
-  return syllable && syllable.isAWordGuess;
+function cleanUpWordGuess(wordGuess) {
+  if (wordGuess.isAWildGuess) {
+    return wordGuess.syllables;
+  } else {
+    return wordGuess;
+  }
 }
 
 module.exports = Wordworker;

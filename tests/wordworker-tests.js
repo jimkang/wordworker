@@ -16,6 +16,7 @@ var testCases = [
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
+      isAWildGuess: false,
       syllablesGroupedByWord: {
         arpabet: [[['B', 'EY'], ['B', 'IY']], [['SH', 'AA', 'R', 'K']]],
         ipa: [['beɪ', 'bi'], ['ʃɑɹk']],
@@ -36,6 +37,7 @@ var testCases = [
     secretToUse: 'secret',
     expectedStatusCode: 200,
     expectedBody: {
+      isAWildGuess: false,
       syllablesGroupedByWord: {
         arpabet: [[['D', 'AY'], ['N', 'AH'], ['S', 'AO', 'R']]],
         ipa: [['daɪ', 'nʌ', 'sɔɹ']],
@@ -54,8 +56,15 @@ var testCases = [
     queryString: 'text=q9834hraj;skdflhsdafa2',
     secret: 'secret',
     secretToUse: 'secret',
-    expectedStatusCode: 404,
-    expectedBody: { message: 'Word not found' }
+    expectedStatusCode: 200,
+    expectedBody: {
+      isAWildGuess: true,
+      syllablesGroupedByWord: {
+        arpabet: [['Q9834HRA', 'J'], ['SKDFLHSDA', 'FA', '2']],
+        ipa: [['', ''], ['', '', '']],
+        wordGuesses: ['Q9834HRA', 'J', 'SKDFLHSDA', 'FA', '2']
+      }
+    }
   },
 
   {

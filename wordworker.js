@@ -10,6 +10,8 @@ var queue = require('d3-queue').queue;
 var arpabetToIPA = require('./arpabet-to-ipa');
 var arpabetGuessText = require('./arpabet-guess-text');
 var curry = require('lodash.curry');
+var hackWordIntoSyllables = require('./hack-word-into-syllables');
+var callNextTick = require('call-next-tick');
 
 var sb = require('standard-bail')();
 
@@ -105,7 +107,7 @@ function respondWithSyllables({ words, next, res }) {
   q.awaitAll(curry(processSyllableLookupResult)(getWordGuesses, next, res));
 
   function queueLookup(word) {
-    q.defer(wordSyllableMap.syllablesForWord, word.toUpperCase());
+    q.defer(getSyllablesForWordWithFallback, word.toUpperCase());
   }
 
   function getWordGuesses(arpabetSyllableGroupsForWords) {
@@ -120,7 +122,11 @@ function respondWithSyllables({ words, next, res }) {
     }
 
     function queueGuess(arpabetSyllable) {
-      guessQueue.defer(guess, arpabetSyllable);
+      if (arpabetSyllable.isAWordGuess) {
+        guessQueue.defer(curry(passToDone)(arpabetSyllable.wordGuess));
+      } else {
+        guessQueue.defer(guess, arpabetSyllable);
+      }
     }
   }
 }
@@ -144,9 +150,12 @@ function guess(arpabetSyllable, done) {
 }
 
 function passSyllables(res, next, arpabetSyllableGroups, wordGuesses) {
+  var isAWildGuess = arpabetSyllableGroups.some(groupContainsAGuess);
+  var arpabet = arpabetSyllableGroups.map(stripGuessTagsFromGroupOfSyllables);
   res.json(200, {
+    isAWildGuess,
     syllablesGroupedByWord: {
-      arpabet: arpabetSyllableGroups,
+      arpabet,
       ipa: arpabetSyllableGroups.map(convertWordToIPA),
       wordGuesses
     }
@@ -161,7 +170,11 @@ function convertWordToIPA(arpabetWord) {
 // This one returns a single string per syllable instead
 // of an array of phonemes.
 function convertSyllableToIPA(arpabetSyllable) {
-  return arpabetSyllable.map(getIPAForPhoneme).join('');
+  if (Array.isArray(arpabetSyllable)) {
+    return arpabetSyllable.map(getIPAForPhoneme).join('');
+  } else {
+    return '';
+  }
 }
 
 function getIPAForPhoneme(arpabetPhoneme) {
@@ -170,6 +183,33 @@ function getIPAForPhoneme(arpabetPhoneme) {
 
 function getTextGuessForArpabetPhoneme(arpabetPhoneme) {
   return arpabetGuessText[arpabetPhoneme];
+}
+
+function stripGuessTagsFromGroupOfSyllables(possibleGuessObjects) {
+  return possibleGuessObjects.map(stripGuessTags);
+}
+
+function stripGuessTags(possibleGuessObject) {
+  if (
+    typeof possibleGuessObject === 'object' &&
+    possibleGuessObject.isAWordGuess
+  ) {
+    return possibleGuessObject.wordGuess;
+  }
+  return possibleGuessObject;
+}
+
+function getSyllablesForWordWithFallback(word, done) {
+  wordSyllableMap.syllablesForWord(word, fallback);
+
+  function fallback(error, syllables) {
+    if (error) {
+      // If we don't know the word, try a (probably bad) guess.
+      done(null, hackWordIntoSyllables(word));
+    } else {
+      done(null, syllables);
+    }
+  }
 }
 
 function processSyllableLookupResult(useResults, next, res, error, results) {
@@ -187,6 +227,18 @@ function processSyllableLookupResult(useResults, next, res, error, results) {
 
 function shutDownDB(done) {
   wordPhonemeMap.close(done);
+}
+
+function passToDone(x, done) {
+  callNextTick(done, null, x);
+}
+
+function groupContainsAGuess(group) {
+  return group.some(syllableIsAGuess);
+}
+
+function syllableIsAGuess(syllable) {
+  return syllable && syllable.isAWordGuess;
 }
 
 module.exports = Wordworker;
